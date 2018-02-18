@@ -48,14 +48,49 @@ jobs:
   include:
   - after_success:
     - mvn clean cobertura:cobertura coveralls:report -P coveralls.io
-    jdk: oraclejdk8
-    script: mvn -q install
-    stage: test
-  - env: JAVADOC=true
+    before_cache:
+    - cp /tmp/classpathFile $HOME/CACHE/classpathFile
+    before_install:
+    - if [ "$TRAVIS_OS_NAME" == "osx" ];        then sed -i '' 's/<gib.enabled>true/<gib.enabled>false/'
+      $TRAVIS_BUILD_DIR/pom.xml;        else sed -i 's/<gib.enabled>true/<gib.enabled>false/'
+      $TRAVIS_BUILD_DIR/pom.xml;        fi
+    before_script:
+    - if [ "$TRAVIS_OS_NAME" == "osx" ];    then sed -i '' 's/<gib.enabled>false/<gib.enabled>true/'
+      $TRAVIS_BUILD_DIR/pom.xml;    else sed -i 's/<gib.enabled>false/<gib.enabled>true/'
+      $TRAVIS_BUILD_DIR/pom.xml;    fi
+    - if [[ -e $HOME/CACHE/classpathFile ]]; then cp $HOME/CACHE/classpathFile /tmp/;
+      fi
     jdk: oraclejdk8
     script:
+    - touch /tmp/NOW
+    - echo GIBSTUDYSTART $(date)
+    - mvn -q install
+    - echo GIBSTUDYEND $(date)
+    - cd $TRAVIS_BUILD_DIR
+    - echo TESTNUM $(find . -name TEST-*.xml -newer /tmp/NOW | wc -l)
+    stage: test
+  - before_cache:
+    - cp /tmp/classpathFile $HOME/CACHE/classpathFile
+    before_install:
+    - if [ "$TRAVIS_OS_NAME" == "osx" ];        then sed -i '' 's/<gib.enabled>true/<gib.enabled>false/'
+      $TRAVIS_BUILD_DIR/pom.xml;        else sed -i 's/<gib.enabled>true/<gib.enabled>false/'
+      $TRAVIS_BUILD_DIR/pom.xml;        fi
+    before_script:
+    - if [ "$TRAVIS_OS_NAME" == "osx" ];    then sed -i '' 's/<gib.enabled>false/<gib.enabled>true/'
+      $TRAVIS_BUILD_DIR/pom.xml;    else sed -i 's/<gib.enabled>false/<gib.enabled>true/'
+      $TRAVIS_BUILD_DIR/pom.xml;    fi
+    - if [[ -e $HOME/CACHE/classpathFile ]]; then cp $HOME/CACHE/classpathFile /tmp/;
+      fi
+    env: JAVADOC=true
+    jdk: oraclejdk8
+    script:
+    - touch /tmp/NOW
+    - echo GIBSTUDYSTART $(date)
     - mvn clean install -DskipTests=true
     - mvn javadoc:aggregate
+    - echo GIBSTUDYEND $(date)
+    - cd $TRAVIS_BUILD_DIR
+    - echo TESTNUM $(find . -name TEST-*.xml -newer /tmp/NOW | wc -l)
   - android:
       components:
       - tools
@@ -64,11 +99,21 @@ jobs:
       - build-tools-26.0.0
       - android-21
       - sys-img-armeabi-v7a-android-21
+    before_cache:
+    - cp /tmp/classpathFile $HOME/CACHE/classpathFile
     before_install:
+    - if [ "$TRAVIS_OS_NAME" == "osx" ];        then sed -i '' 's/<gib.enabled>true/<gib.enabled>false/'
+      $TRAVIS_BUILD_DIR/pom.xml;        else sed -i 's/<gib.enabled>true/<gib.enabled>false/'
+      $TRAVIS_BUILD_DIR/pom.xml;        fi
     - echo no | android create avd --force -n test -t android-21 --abi armeabi-v7a
     - emulator -avd test -no-skin -no-audio -no-window &
     before_script:
     - android-wait-for-emulator
+    - if [ "$TRAVIS_OS_NAME" == "osx" ];    then sed -i '' 's/<gib.enabled>false/<gib.enabled>true/'
+      $TRAVIS_BUILD_DIR/pom.xml;    else sed -i 's/<gib.enabled>false/<gib.enabled>true/'
+      $TRAVIS_BUILD_DIR/pom.xml;    fi
+    - if [[ -e $HOME/CACHE/classpathFile ]]; then cp $HOME/CACHE/classpathFile /tmp/;
+      fi
     env: ANDROID_EXAMPLES=true
     install:
     - mvn -q install --also-make --projects android,picocontainer -DskipTests=true
@@ -76,16 +121,38 @@ jobs:
     jdk: oraclejdk8
     language: android
     script:
+    - touch /tmp/NOW
+    - echo GIBSTUDYSTART $(date)
     - mvn install --activate-profiles android-examples --projects examples/android
       --also-make-dependents -Dandroid.device=test
-  - true:
-      repo: cucumber/cucumber-jvm
+    - echo GIBSTUDYEND $(date)
+    - cd $TRAVIS_BUILD_DIR
+    - echo TESTNUM $(find . -name TEST-*.xml -newer /tmp/NOW | wc -l)
+  - jdk: oraclejdk8
     script:
+    - touch /tmp/NOW
+    - echo GIBSTUDYSTART $(date)
     - ./continuous-deployment/before-deploy.sh
     - ./continuous-deployment/deploy.sh
     - ./continuous-deployment/upload-api-docs.sh
+    - echo GIBSTUDYEND $(date)
+    - cd $TRAVIS_BUILD_DIR
+    - echo TESTNUM $(find . -name TEST-*.xml -newer /tmp/NOW | wc -l)
+    before_cache:
+    - cp /tmp/classpathFile $HOME/CACHE/classpathFile
+    true:
+      repo: cucumber/cucumber-jvm
+    before_script:
+    - if [ "$TRAVIS_OS_NAME" == "osx" ];    then sed -i '' 's/<gib.enabled>false/<gib.enabled>true/'
+      $TRAVIS_BUILD_DIR/pom.xml;    else sed -i 's/<gib.enabled>false/<gib.enabled>true/'
+      $TRAVIS_BUILD_DIR/pom.xml;    fi
+    - if [[ -e $HOME/CACHE/classpathFile ]]; then cp $HOME/CACHE/classpathFile /tmp/;
+      fi
+    before_install:
+    - if [ "$TRAVIS_OS_NAME" == "osx" ];        then sed -i '' 's/<gib.enabled>true/<gib.enabled>false/'
+      $TRAVIS_BUILD_DIR/pom.xml;        else sed -i 's/<gib.enabled>true/<gib.enabled>false/'
+      $TRAVIS_BUILD_DIR/pom.xml;        fi
     stage: deploy
-    jdk: oraclejdk8
 language: java
 script:
 - touch /tmp/NOW
